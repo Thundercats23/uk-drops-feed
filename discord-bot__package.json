@@ -1,0 +1,13 @@
+{
+  "name": "uk-drops-feed-discord-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Template Discord bot that posts official TCG drop and restock updates from UK Drops Feed.",
+  "scripts": {
+    "start": "node bot.mjs"
+  },
+  "dependencies": {
+    "discord.js": "^14.22.1"
+  }
+}

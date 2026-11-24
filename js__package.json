@@ -1,0 +1,17 @@
+{
+  "name": "uk-drops-feed-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tiny x402 / credit-token client for UK Drops Feed. Not an official npm package yet.",
+  "scripts": {
+    "teaser": "node example.mjs teaser",
+    "upcoming": "node example.mjs upcoming"
+  },
+  "dependencies": {
+    "@x402/core": "^2.31.0",
+    "@x402/evm": "^2.31.0",
+    "@x402/fetch": "^2.31.0",
+    "viem": "^2.57.20"
+  }
+}

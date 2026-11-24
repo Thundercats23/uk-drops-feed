@@ -1,0 +1,22 @@
+{
+  "name": "UK Drops Feed — upcoming Pokémon alerts",
+  "note": "Checklist for building the scenario in Make.com. Not a native Make blueprint.",
+  "modules": [
+    { "type": "scheduler", "interval_minutes": 30 },
+    {
+      "type": "http",
+      "method": "GET",
+      "url": "https://uk-drops-feed.8bitbudgets.workers.dev/v1/drops/upcoming?franchise=pokemon-tcg&days=30&limit=25&region=UK",
+      "headers": { "X-Credit-Token": "<stored connection, not in this file>" }
+    },
+    { "type": "filter", "condition": "status = 200" },
+    { "type": "iterator", "array": "drops" },
+    { "type": "datastore_lookup", "key": "id", "skip_if_unchanged": ["release_date", "release_window", "price_from", "rrp"] },
+    {
+      "type": "discord_or_slack",
+      "message": "{{product}} ({{region}}) — {{release_date or release_window}}. Check the retailer before buying. Source: UK Drops Feed."
+    },
+    { "type": "datastore_write", "key": "id" }
+  ],
+  "fallback_free_test": "https://uk-drops-feed.8bitbudgets.workers.dev/v1/teaser?region=UK"
+}

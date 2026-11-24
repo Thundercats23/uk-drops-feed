@@ -1,0 +1,5 @@
+# Official x402 buyer client (httpx extra) plus a signer.
+# See https://docs.x402.org/getting-started/quickstart-for-buyers
+x402[httpx]
+eth_account
+httpx

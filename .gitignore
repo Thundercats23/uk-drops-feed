@@ -1,0 +1,20 @@
+# Dependencies and virtualenvs
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Secrets and local state — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Bot runtime
+seen.json
+*.log
+.DS_Store

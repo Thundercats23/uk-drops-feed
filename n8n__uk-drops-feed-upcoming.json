@@ -1,0 +1,82 @@
+{
+  "name": "UK Drops Feed — upcoming Pokémon alerts",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 30 }] } },
+      "id": "schedule",
+      "name": "Every 30 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://uk-drops-feed.8bitbudgets.workers.dev/v1/drops/upcoming?franchise=pokemon-tcg&days=30&limit=25&region=UK",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "response": { "response": { "fullResponse": true } } }
+      },
+      "id": "http",
+      "name": "Fetch upcoming drops",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "credentials": { "httpHeaderAuth": { "id": "REPLACE_ME", "name": "UK Drops Feed token" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "status-ok",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if200",
+      "name": "HTTP 200?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nstaticData.seen = staticData.seen || {};\nconst body = $json.body || $json;\nconst drops = body.drops || body.items || [];\nconst fresh = [];\nfor (const item of drops) {\n  const id = item.id;\n  if (!id) continue;\n  const fp = JSON.stringify({ d: item.release_date || item.release_window, p: item.price_from ?? item.rrp });\n  if (staticData.seen[id] === fp) continue;\n  staticData.seen[id] = fp;\n  fresh.push(item);\n}\nreturn fresh.map(item => ({ json: item }));"
+      },
+      "id": "diff",
+      "name": "Keep only new or changed ids",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/REPLACE_WEBHOOK_ID/REPLACE_WEBHOOK_TOKEN",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: 'New official drop (check the retailer before buying)', embeds: [{ title: $json.product || $json.id, url: ($json.sources && $json.sources[0] && $json.sources[0].url) || undefined, fields: [{ name: 'Region', value: $json.region || 'UK', inline: true }, { name: 'Date', value: $json.release_date || $json.release_window || 'not confirmed', inline: true }], footer: { text: 'UK Drops Feed' } }] }) }}",
+        "options": {}
+      },
+      "id": "discord",
+      "name": "Post to Discord webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 220]
+    }
+  ],
+  "connections": {
+    "Every 30 minutes": { "main": [[{ "node": "Fetch upcoming drops", "type": "main", "index": 0 }]] },
+    "Fetch upcoming drops": { "main": [[{ "node": "HTTP 200?", "type": "main", "index": 0 }]] },
+    "HTTP 200?": { "main": [[{ "node": "Keep only new or changed ids", "type": "main", "index": 0 }]] },
+    "Keep only new or changed ids": { "main": [[{ "node": "Post to Discord webhook", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": false }
+}
