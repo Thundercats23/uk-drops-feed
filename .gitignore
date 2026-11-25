@@ -4,6 +4,12 @@ node_modules/
 venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
 
 # Secrets and local state — never commit these
 .env

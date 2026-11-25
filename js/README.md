@@ -1,52 +1,76 @@
-# UK Drops Feed — JavaScript client
+# uk-drops-feed (JavaScript / TypeScript)
 
-Minimal Node.js example that:
+Official JS/TS client and AI agent tool wrappers for [UK Drops Feed](https://uk-drops-feed.8bitbudgets.workers.dev).
 
-1. Fetches the **free** teaser (no wallet).
-2. Calls a paid route with a **credit or trial token** if `UKDF_CREDIT_TOKEN` is set (no on-chain payment).
-3. Otherwise pays **$0.01 USDC on Base** via official x402 libraries, after checking the 402 terms.
+- **Free teaser:** `GET /v1/teaser` (no key required)
+- **Free trial:** `POST /v1/trial-key?ref=...` (25 free calls on `/v1/drops/*` and `/v1/briefs/*`, up to 3 keys/day per IP)
+- **Prepaid credits:** `$0.20` USDC for 25 HTTP calls (`POST /v1/credits/buy`)
+- **Pay-per-call x402:** `$0.01` USDC on Base mainnet per call (with built-in amount, network, USDC, and `payTo` checks)
 
 ## Install
 
 ```bash
-npm install
+npm install uk-drops-feed
 ```
 
 Needs Node 18+.
 
-## Environment
+## Quickstart
 
-| Variable | Required | Purpose |
-|---|---|---|
-| `UKDF_TRIAL_KEY` | No | Free trial key from `POST /v1/trial-key`. Sent as `X-Trial-Key` (and Bearer). |
-| `UKDF_CREDIT_TOKEN` | No | Prepaid pack token. Sent as `X-Credit-Token` and Bearer. |
-| `EVM_PRIVATE_KEY` | Only for x402 pays | `0x`-prefixed Base wallet private key with a little USDC. **Never commit this.** |
-| `UKDF_DRY_RUN` | No | If `1`, print the 402 terms and exit without paying. |
+```js
+import { UkDropsFeedClient } from "uk-drops-feed";
 
-Optional: `UKDF_BASE` defaults to `https://uk-drops-feed.8bitbudgets.workers.dev`.
+// autoTrial mints a 25-call free trial key on first paid-route call
+const client = new UkDropsFeedClient({ autoTrial: true, trialRef: "my-app" });
 
-## Run
-
-```bash
-# Free, no key
-node example.mjs teaser
-
-# Get a trial key once (prints the token; store it, do not commit it)
-curl -sS -X POST https://uk-drops-feed.8bitbudgets.workers.dev/v1/trial-key
-
-# Trial key (no wallet)
-UKDF_TRIAL_KEY=... node example.mjs upcoming
-
-# Prepaid pack token (no wallet)
-UKDF_CREDIT_TOKEN=... node example.mjs upcoming
-
-# Inspect a 402 without spending
-UKDF_DRY_RUN=1 node example.mjs upcoming
-
-# Pay $0.01 once (real USDC). Only if you intend to.
-EVM_PRIVATE_KEY=0x... node example.mjs upcoming
+const teaser = await client.teaser("UK");
+const upcoming = await client.upcoming({ franchise: "pokemon-tcg", days: 60, limit: 10 });
+const restocks = await client.restocks({ franchise: "pokemon-tcg" });
 ```
 
-The paid example uses `GET /v1/drops/upcoming?franchise=pokemon-tcg&days=60&limit=10&region=UK` and aborts if the 402 is not exactly 0.01 USDC on Base to the published pay-to address.
+### With an existing trial key, credit token, or Base wallet
 
-Client pattern follows the official buyer quickstart: https://docs.x402.org/getting-started/quickstart-for-buyers
+```js
+const withTrial = new UkDropsFeedClient({ trialKey: process.env.UKDF_TRIAL_KEY });
+const withCredits = new UkDropsFeedClient({ creditToken: process.env.UKDF_CREDIT_TOKEN });
+const withWallet = new UkDropsFeedClient({
+  evmPrivateKey: process.env.EVM_PRIVATE_KEY,
+  maxAtomicAmount: "200000", // cap at $0.20 USDC
+});
+```
+
+## LangChain.js
+
+```js
+import { UkDropsFeedClient } from "uk-drops-feed";
+import { createLangChainTools } from "uk-drops-feed/langchain";
+
+const client = new UkDropsFeedClient({ autoTrial: true, trialRef: "langchain-js" });
+const tools = await createLangChainTools(client);
+```
+
+## OpenAI Agents SDK (`@openai/agents`)
+
+```js
+import { UkDropsFeedClient } from "uk-drops-feed";
+import { createOpenAIAgentsTools } from "uk-drops-feed/openai-agents";
+
+const client = new UkDropsFeedClient({ autoTrial: true, trialRef: "openai-agents-js" });
+const tools = await createOpenAIAgentsTools(client);
+```
+
+## CLI example (`example.mjs`)
+
+```bash
+node example.mjs teaser
+UKDF_TRIAL_KEY=... node example.mjs upcoming
+UKDF_DRY_RUN=1 node example.mjs upcoming
+```
+
+### No crypto wallet? (Card payments coming soon + 1-minute Coinbase guide)
+
+**No crypto wallet? Card payments are coming soon.** You can still start today with **25 free trial calls** (`POST /v1/trial-key`, no signup or card required).
+
+If you want to go beyond 25 calls right now with **$0.01 USDC per call on Base** (or **$0.20** for a 25-call pack):
+1. Open **Coinbase** or the **Base App** (or MetaMask), buy or hold a small amount of **USDC** on the **Base** network (you don't need ETH for gas to sign an x402 payment).
+2. Copy/connect a Base wallet private key (`EVM_PRIVATE_KEY`) to the `uk-drops-feed` JS/Python client (or any x402 buyer client) to pay automatically per call—or run `POST /v1/credits/buy` once to get a prepaid `cr_...` bearer token.

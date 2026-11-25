@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uk-drops-feed"
+version = "0.7.2"
+description = "Official Python client and agent tool wrappers (LangChain, CrewAI, OpenAI Agents SDK) for UK Drops Feed — collectibles & video game release dates, restocks, and prices via trial key, prepaid credits, or x402 USDC on Base."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["x402", "mcp", "pokemon-tcg", "collectibles", "release-dates", "restocks", "langchain", "crewai", "openai-agents"]
+dependencies = [
+  "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+x402 = ["x402[httpx]", "eth-account"]
+langchain = ["langchain-core>=0.3.0", "pydantic>=2.0"]
+crewai = ["crewai>=0.80.0", "pydantic>=2.0"]
+openai-agents = ["openai-agents>=0.0.1", "pydantic>=2.0"]
+all = [
+  "x402[httpx]",
+  "eth-account",
+  "langchain-core>=0.3.0",
+  "crewai>=0.80.0",
+  "openai-agents>=0.0.1",
+  "pydantic>=2.0",
+]
+
+[project.urls]
+Homepage = "https://uk-drops-feed.8bitbudgets.workers.dev"
+Documentation = "https://uk-drops-feed.8bitbudgets.workers.dev/llms.txt"
+Repository = "https://github.com/Thundercats23/uk-drops-feed"
+
+[tool.setuptools.packages.find]
+where = ["src"]

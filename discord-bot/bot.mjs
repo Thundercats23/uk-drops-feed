@@ -44,7 +44,7 @@ function fingerprint(item) {
     d: item.release_date || item.release_window || null,
     e: item.ends_on || null,
     s: item.status || null,
-    p: item.price_from ?? item.rrp ?? item.price_from_local ?? null,
+    p: item.price_from_gbp ?? item.price_gbp ?? item.rrp_gbp ?? item.price_from ?? item.rrp ?? item.price_from_local ?? null,
   });
 }
 
@@ -63,6 +63,7 @@ async function getJson(path) {
 function itemsFrom(body) {
   if (Array.isArray(body?.drops)) return body.drops;
   if (Array.isArray(body?.items)) return body.items;
+  if (Array.isArray(body?.in_stock_now) || Array.isArray(body?.events)) return [...(body.in_stock_now || []), ...(body.events || [])];
   if (Array.isArray(body?.restocks)) return body.restocks;
   if (Array.isArray(body)) return body;
   return [];
@@ -76,6 +77,9 @@ function sourceUrl(item) {
 function embedFor(item, kind) {
   const when = item.release_date || item.release_window || item.ends_on || "Date not confirmed";
   const price =
+    item.price_from_gbp != null ? `From £${item.price_from_gbp}` :
+    item.price_gbp != null ? `£${item.price_gbp}` :
+    item.rrp_gbp != null ? `RRP £${item.rrp_gbp}` :
     item.price_from != null ? `From £${item.price_from}` :
     item.rrp != null ? `RRP £${item.rrp}` :
     item.price_from_local != null ? `${item.currency || ""} ${item.price_from_local}`.trim() :
@@ -105,7 +109,7 @@ async function poll(channel, seen) {
     const kind = path.includes("restocks") ? "Restock" : "Upcoming";
     const body = await getJson(path);
     for (const item of itemsFrom(body)) {
-      const id = item.id || sourceUrl(item) || item.product;
+      const id = item.drop_id || item.id || sourceUrl(item) || item.product;
       if (!id) continue;
       const fp = fingerprint(item);
       if (seen[id] === fp) continue;

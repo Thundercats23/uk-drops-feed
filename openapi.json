@@ -1,0 +1,1632 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "UK Drops Feed",
+    "version": "0.7.2",
+    "description": "Collectibles and video game release dates, prices and restocks for AI agents, covering the UK (default) plus official US, Canada, Australia/NZ, Europe, Japan and other listed regions when published: Pokémon, One Piece, Lorcana, Yu-Gi-Oh!, Star Wars: Unlimited and MTG; official TCG street-date calendar; LEGO; game launches including GTA 6; prereleases; Black Friday / Cyber Monday sale windows; curated stock/preorder status; weekly official-source briefs. Filter with region (UK default, or US, CA, AU, EU, JP, all). Pay per call in USDC on Base via x402, or start with 25 free calls (POST /v1/trial-key), or buy a 25-call prepaid credit pack. No crypto wallet? Card payments are coming soon. A hand-checked question route returns a researched, cited answer within 24 hours (not instant, not financial advice).",
+    "x-guidance": "Start with GET /v1/teaser (free) or mint a 25-call free trial key via POST /v1/trial-key (optional ?ref=<channel>), then pass X-Trial-Key or Authorization: Bearer on /v1/drops/* and /v1/briefs/*. After 25 calls, pay $0.01 USDC per call on Base via x402 or buy 25 calls for $0.20 via POST /v1/credits/buy. No crypto wallet? Card payments are coming soon. Default region is UK; pass region=US, CA, AU, EU, JP or all."
+  },
+  "servers": [
+    {
+      "url": "https://uk-drops-feed.8bitbudgets.workers.dev"
+    }
+  ],
+  "x-discovery": {
+    "wellKnown": "https://uk-drops-feed.8bitbudgets.workers.dev/.well-known/x402",
+    "llmsTxt": "https://uk-drops-feed.8bitbudgets.workers.dev/llms.txt",
+    "mcp": "https://uk-drops-feed.8bitbudgets.workers.dev/mcp",
+    "icon": "https://uk-drops-feed.8bitbudgets.workers.dev/icon.png"
+  },
+  "components": {
+    "securitySchemes": {
+      "TrialKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Trial-Key",
+        "description": "25-call free trial key from POST /v1/trial-key"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Trial key (tr_...) or 25-call prepaid credit token (cr_...)"
+      }
+    }
+  },
+  "paths": {
+    "/v1/teaser": {
+      "get": {
+        "operationId": "getTeaser",
+        "tags": [
+          "Free"
+        ],
+        "security": [],
+        "summary": "Next 3 drops across categories (free; default region=UK). Pass region=US or all. Dated releases, plus high-demand restock-watches still waiting for a confirmed day (e.g. Pokémon UPCs). Response includes how to get 25 free paid-route calls.",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "description": "UK (default), US, CA, AU, EU, JP, comma-separated, or all",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "number"
+                    },
+                    "drops": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product": {
+                            "type": "string",
+                            "description": "Product name"
+                          },
+                          "release_date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "YYYY-MM-DD when known, otherwise null"
+                          },
+                          "region": {
+                            "type": "string",
+                            "description": "Market code, e.g. UK, US, CA"
+                          },
+                          "retailer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Primary retailer when known, otherwise null"
+                          },
+                          "offers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "retailer": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Retailer or product link"
+                                }
+                              },
+                              "required": [
+                                "retailer",
+                                "url"
+                              ]
+                            }
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "description": "Cited source link"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "checked": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "url"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "product",
+                          "release_date",
+                          "region",
+                          "retailer",
+                          "sources"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "drops"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sources": {
+      "get": {
+        "operationId": "getSources",
+        "tags": [
+          "Free"
+        ],
+        "security": [],
+        "summary": "Permitted sources, robots/terms policy, and citation attributions (free).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "policy": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/trial-key": {
+      "get": {
+        "operationId": "getTrialKeyInfo",
+        "tags": [
+          "Trial"
+        ],
+        "security": [],
+        "summary": "How to get a 25-call free trial key (does not issue a key).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usage": {
+                      "type": "string"
+                    },
+                    "pack": {
+                      "type": "integer"
+                    },
+                    "valid_for": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "issueTrialKey",
+        "tags": [
+          "Trial"
+        ],
+        "security": [],
+        "summary": "Issue a key for 25 free paid-route calls, then x402 applies. Optional ?ref=<channel> attribution tag. Up to 3 keys per day from one address.",
+        "parameters": [
+          {
+            "name": "ref",
+            "in": "query",
+            "required": false,
+            "description": "Optional channel/source attribution tag (e.g. devto, js-sdk, python-sdk, tutorial)",
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ref": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "description": "Optional channel/source attribution tag"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "pack": {
+                      "type": "integer"
+                    },
+                    "issued_at": {
+                      "type": "string"
+                    },
+                    "ref": {
+                      "type": "string"
+                    },
+                    "valid_for": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "remaining",
+                    "pack",
+                    "issued_at"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit"
+          }
+        }
+      }
+    },
+    "/v1/trial/balance": {
+      "get": {
+        "operationId": "getTrialBalance",
+        "tags": [
+          "Trial"
+        ],
+        "security": [],
+        "summary": "Remaining free trial calls (send X-Trial-Key or Authorization: Bearer).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "pack": {
+                      "type": "integer"
+                    },
+                    "issued_at": {
+                      "type": "string"
+                    },
+                    "last_used_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "ref": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing key"
+          },
+          "404": {
+            "description": "Unknown key"
+          }
+        }
+      }
+    },
+    "/v1/drops/upcoming": {
+      "get": {
+        "operationId": "getUpcomingDrops",
+        "tags": [
+          "Drops"
+        ],
+        "summary": "Upcoming drops, including GTA 6 and other official game release dates ($0.01). Default region=UK.",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "description": "UK (default), US, CA, AU, EU, JP, other listed codes, comma-separated, or all",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "franchise",
+            "in": "query",
+            "description": "Filter to one franchise (use video-game for official game and console dates)",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pokemon-tcg",
+                "mtg",
+                "one-piece",
+                "lorcana",
+                "yugioh",
+                "star-wars-unlimited",
+                "lego",
+                "video-game",
+                "retail-sale",
+                "jellycat",
+                "needoh",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "release, retiring, sale-window, restock-watch, prerelease or organised-play",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "release",
+                "retiring",
+                "sale-window",
+                "restock-watch",
+                "reference",
+                "prerelease",
+                "organised-play"
+              ]
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "description": "Filter to drops with this sale channel",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preorder",
+                "raffle",
+                "queue",
+                "in-store-only",
+                "online",
+                "unconfirmed"
+              ]
+            }
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "default": 60
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          }
+        ],
+        "x-x402": {
+          "price": "$0.01",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.01"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "number"
+                    },
+                    "drops": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product": {
+                            "type": "string",
+                            "description": "Product name"
+                          },
+                          "release_date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "YYYY-MM-DD when known, otherwise null"
+                          },
+                          "region": {
+                            "type": "string",
+                            "description": "Market code, e.g. UK, US, CA"
+                          },
+                          "retailer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Primary retailer when known, otherwise null"
+                          },
+                          "offers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "retailer": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Retailer or product link"
+                                }
+                              },
+                              "required": [
+                                "retailer",
+                                "url"
+                              ]
+                            }
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "description": "Cited source link"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "checked": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "url"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "product",
+                          "release_date",
+                          "region",
+                          "retailer",
+                          "sources"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "drops"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/drops/calendar": {
+      "get": {
+        "operationId": "getTcgCalendar",
+        "tags": [
+          "Drops"
+        ],
+        "summary": "Official TCG set and product street dates ($0.01). Default region=UK.",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "description": "UK (default), US, CA, AU, EU, JP, comma-separated, or all",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "franchise",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pokemon-tcg",
+                "mtg",
+                "one-piece",
+                "lorcana",
+                "yugioh",
+                "star-wars-unlimited"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "release",
+                "prerelease"
+              ]
+            }
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "default": 120
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            }
+          }
+        ],
+        "x-x402": {
+          "price": "$0.01",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.01"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "number"
+                    },
+                    "drops": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product": {
+                            "type": "string",
+                            "description": "Product name"
+                          },
+                          "release_date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "YYYY-MM-DD when known, otherwise null"
+                          },
+                          "region": {
+                            "type": "string",
+                            "description": "Market code, e.g. UK, US, CA"
+                          },
+                          "retailer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Primary retailer when known, otherwise null"
+                          },
+                          "offers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "retailer": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Retailer or product link"
+                                }
+                              },
+                              "required": [
+                                "retailer",
+                                "url"
+                              ]
+                            }
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "description": "Cited source link"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "checked": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "url"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "product",
+                          "release_date",
+                          "region",
+                          "retailer",
+                          "sources"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "drops"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/drops/restocks": {
+      "get": {
+        "operationId": "getRestocks",
+        "tags": [
+          "Drops"
+        ],
+        "summary": "Restocks and in-stock items ($0.01). Default region=UK.",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "description": "UK (default), US, CA, comma-separated, or all",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "franchise",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pokemon-tcg",
+                "mtg",
+                "one-piece",
+                "lorcana",
+                "yugioh",
+                "star-wars-unlimited",
+                "lego",
+                "video-game",
+                "retail-sale",
+                "jellycat",
+                "needoh",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preorder",
+                "raffle",
+                "queue",
+                "in-store-only",
+                "online",
+                "unconfirmed"
+              ]
+            }
+          }
+        ],
+        "x-x402": {
+          "price": "$0.01",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.01"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "since": {
+                      "type": "string"
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product": {
+                            "type": "string",
+                            "description": "Product name"
+                          },
+                          "release_date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "YYYY-MM-DD when known, otherwise null"
+                          },
+                          "region": {
+                            "type": "string"
+                          },
+                          "retailer": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "Retailer or source link"
+                          }
+                        },
+                        "required": [
+                          "product",
+                          "release_date",
+                          "region",
+                          "retailer",
+                          "url"
+                        ]
+                      }
+                    },
+                    "in_stock_now": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product": {
+                            "type": "string",
+                            "description": "Product name"
+                          },
+                          "release_date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "YYYY-MM-DD when known, otherwise null"
+                          },
+                          "region": {
+                            "type": "string"
+                          },
+                          "retailer": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "Retailer or source link"
+                          }
+                        },
+                        "required": [
+                          "product",
+                          "release_date",
+                          "region",
+                          "retailer",
+                          "url"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "events",
+                    "in_stock_now"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/drops/status": {
+      "get": {
+        "operationId": "getStockStatus",
+        "tags": [
+          "Drops"
+        ],
+        "summary": "Curated stock, preorder and purchase-limit status ($0.01). Default region=UK.",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Comma-separated drop ids; default is restock-watches and items with offers or a curated status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "description": "UK (default), US, CA, comma-separated, or all",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "franchise",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pokemon-tcg",
+                "mtg",
+                "one-piece",
+                "lorcana",
+                "yugioh",
+                "star-wars-unlimited",
+                "lego",
+                "video-game",
+                "retail-sale",
+                "jellycat",
+                "needoh",
+                "other"
+              ]
+            }
+          }
+        ],
+        "x-x402": {
+          "price": "$0.01",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.01"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "number"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "product": {
+                            "type": "string",
+                            "description": "Product name"
+                          },
+                          "release_date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "YYYY-MM-DD when known, otherwise null"
+                          },
+                          "region": {
+                            "type": "string",
+                            "description": "Market code, e.g. UK, US, CA"
+                          },
+                          "retailer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Primary retailer when known, otherwise null"
+                          },
+                          "offers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "retailer": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "Retailer or product link"
+                                }
+                              },
+                              "required": [
+                                "retailer",
+                                "url"
+                              ]
+                            }
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "description": "Cited source link"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "checked": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "url"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "product",
+                          "release_date",
+                          "region",
+                          "retailer",
+                          "sources"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/drops/item/{id}": {
+      "get": {
+        "operationId": "getDropItem",
+        "tags": [
+          "Drops"
+        ],
+        "summary": "One drop with offers and history ($0.01)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "x-x402": {
+          "price": "$0.01",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.01"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "item": {
+                      "type": "object",
+                      "properties": {
+                        "product": {
+                          "type": "string",
+                          "description": "Product name"
+                        },
+                        "release_date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "YYYY-MM-DD when known, otherwise null"
+                        },
+                        "region": {
+                          "type": "string",
+                          "description": "Market code, e.g. UK, US, CA"
+                        },
+                        "retailer": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Primary retailer when known, otherwise null"
+                        },
+                        "offers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "retailer": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string",
+                                "description": "Retailer or product link"
+                              }
+                            },
+                            "required": [
+                              "retailer",
+                              "url"
+                            ]
+                          }
+                        },
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "description": "Cited source link"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "checked": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "url"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "product",
+                        "release_date",
+                        "region",
+                        "retailer",
+                        "sources"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "item"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/briefs/weekly": {
+      "get": {
+        "operationId": "getWeeklyBrief",
+        "tags": [
+          "Briefs"
+        ],
+        "summary": "This week's official games and TCG story seeds, each marked confirmed or rumoured ($0.01)",
+        "parameters": [
+          {
+            "name": "franchise",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pokemon-tcg",
+                "mtg",
+                "one-piece",
+                "lorcana",
+                "yugioh",
+                "star-wars-unlimited",
+                "lego",
+                "video-game",
+                "retail-sale",
+                "jellycat",
+                "needoh",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "week",
+            "in": "query",
+            "description": "Any YYYY-MM-DD in the week; default is this week's Monday",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "x-x402": {
+          "price": "$0.01",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.01"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "week_of": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "number"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Story / product title"
+                          },
+                          "source": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "description": "Cited official source link"
+                              }
+                            },
+                            "required": [
+                              "url"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "source"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/credits/buy": {
+      "get": {
+        "operationId": "getCreditsBuyInfo",
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Buy a prepaid pack of 25 calls for drop and brief routes ($0.20)",
+        "x-x402": {
+          "price": "$0.20",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.20"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      },
+      "post": {
+        "operationId": "buyCredits",
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Buy a prepaid pack of 25 calls for drop and brief routes ($0.20)",
+        "x-x402": {
+          "price": "$0.20",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.20"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/credits/balance": {
+      "get": {
+        "operationId": "getCreditsBalance",
+        "tags": [
+          "Credits"
+        ],
+        "security": [],
+        "summary": "Remaining prepaid credits (free). Send Authorization: Bearer <token> or X-Credit-Token.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "pack": {
+                      "type": "integer"
+                    },
+                    "purchased_at": {
+                      "type": "string"
+                    },
+                    "last_used_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing token"
+          },
+          "404": {
+            "description": "Unknown token"
+          }
+        }
+      }
+    },
+    "/v1/ask": {
+      "get": {
+        "operationId": "getAskInfo",
+        "tags": [
+          "Ask"
+        ],
+        "summary": "Submit a hand-checked UK drop/stock/release question ($0.15). Discovery GET returns usage after payment.",
+        "x-x402": {
+          "price": "$0.15",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.15"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      },
+      "post": {
+        "operationId": "submitAsk",
+        "tags": [
+          "Ask"
+        ],
+        "summary": "Submit a hand-checked UK drop/stock/release question ($0.15). Researched by a person or agent, not instant, not financial advice. Poll GET /v1/ask/{id}.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "question"
+                ],
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "UK collectibles or games drop, stock or release status question"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-x402": {
+          "price": "$0.15",
+          "currency": "USDC",
+          "network": "eip155:8453",
+          "scheme": "exact"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.15"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0xb3f6872E6ffeA3f8Da7a5d5EB52ed2a5e15D60AA"
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "402": {
+            "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/ask/{id}": {
+      "get": {
+        "operationId": "getAskAnswer",
+        "tags": [
+          "Ask"
+        ],
+        "security": [],
+        "summary": "Poll a hand-checked question. Free. Returns queued status or the cited answer. Not financial advice.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "question": {
+                      "type": "string"
+                    },
+                    "answer": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown id"
+          }
+        }
+      }
+    }
+  }
+}

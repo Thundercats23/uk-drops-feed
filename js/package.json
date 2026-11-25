@@ -1,17 +1,79 @@
 {
-  "name": "uk-drops-feed-client",
-  "version": "0.1.0",
-  "private": true,
+  "name": "uk-drops-feed",
+  "version": "0.7.2",
+  "description": "Official JS/TS client and AI agent tool wrappers (LangChain, OpenAI Agents SDK) for UK Drops Feed — collectibles & video game release dates, restocks, and prices via trial key, prepaid credits, or x402 USDC on Base.",
   "type": "module",
-  "description": "Tiny x402 / credit-token client for UK Drops Feed. Not an official npm package yet.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./langchain": {
+      "types": "./dist/langchain.d.ts",
+      "import": "./dist/langchain.js"
+    },
+    "./openai-agents": {
+      "types": "./dist/openai-agents.d.ts",
+      "import": "./dist/openai-agents.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "x402",
+    "mcp",
+    "pokemon-tcg",
+    "collectibles",
+    "release-dates",
+    "restocks",
+    "langchain",
+    "openai-agents",
+    "base",
+    "usdc"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Thundercats23/uk-drops-feed.git",
+    "directory": "js"
+  },
+  "homepage": "https://uk-drops-feed.8bitbudgets.workers.dev",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs",
     "teaser": "node example.mjs teaser",
-    "upcoming": "node example.mjs upcoming"
+    "upcoming": "node example.mjs upcoming",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@x402/core": "^2.31.0",
     "@x402/evm": "^2.31.0",
     "@x402/fetch": "^2.31.0",
-    "viem": "^2.57.20"
+    "viem": "^2.57.20",
+    "zod": "^3.24.0"
+  },
+  "peerDependencies": {
+    "@langchain/core": ">=0.3.0",
+    "@openai/agents": ">=0.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@langchain/core": {
+      "optional": true
+    },
+    "@openai/agents": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
   }
 }
