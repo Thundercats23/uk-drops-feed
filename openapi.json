@@ -2,9 +2,9 @@
   "openapi": "3.1.0",
   "info": {
     "title": "UK Drops Feed",
-    "version": "0.7.2",
-    "description": "Collectibles and video game release dates, prices and restocks for AI agents, covering the UK (default) plus official US, Canada, Australia/NZ, Europe, Japan and other listed regions when published: Pokémon, One Piece, Lorcana, Yu-Gi-Oh!, Star Wars: Unlimited and MTG; official TCG street-date calendar; LEGO; game launches including GTA 6; prereleases; Black Friday / Cyber Monday sale windows; curated stock/preorder status; weekly official-source briefs. Filter with region (UK default, or US, CA, AU, EU, JP, all). Pay per call in USDC on Base via x402, or start with 25 free calls (POST /v1/trial-key), or buy a 25-call prepaid credit pack. No crypto wallet? Card payments are coming soon. A hand-checked question route returns a researched, cited answer within 24 hours (not instant, not financial advice).",
-    "x-guidance": "Start with GET /v1/teaser (free) or mint a 25-call free trial key via POST /v1/trial-key (optional ?ref=<channel>), then pass X-Trial-Key or Authorization: Bearer on /v1/drops/* and /v1/briefs/*. After 25 calls, pay $0.01 USDC per call on Base via x402 or buy 25 calls for $0.20 via POST /v1/credits/buy. No crypto wallet? Card payments are coming soon. Default region is UK; pass region=US, CA, AU, EU, JP or all."
+    "version": "0.8.0",
+    "description": "Collectibles and video game release dates, prices and restocks for AI agents, covering the UK (default) plus official US, Canada, Australia/NZ, Europe, Japan and other listed regions when published: Pokémon, One Piece, Lorcana, Yu-Gi-Oh!, Star Wars: Unlimited and MTG; official TCG street-date calendar; LEGO; game launches including GTA 6; prereleases; Black Friday / Cyber Monday sale windows; curated stock/preorder status; weekly official-source briefs. Filter with region (UK default, or US, CA, AU, EU, JP, all). Pay per call in USDC on Base via x402, or start with 25 free calls (POST /v1/trial-key), or buy a 25-call prepaid credit pack. Card credit packs (GBP, Stripe): GET /v1/credits/packs. A hand-checked question route returns a researched, cited answer within 24 hours (not instant, not financial advice).",
+    "x-guidance": "Start with GET /v1/teaser (free) or mint a 25-call free trial key via POST /v1/trial-key (optional ?ref=<channel>), then pass X-Trial-Key or Authorization: Bearer on /v1/drops/* and /v1/briefs/*. After 25 calls, pay $0.01 USDC per call on Base via x402 or buy 25 calls for $0.20 via POST /v1/credits/buy. No crypto wallet? Pay by card (GBP, via Stripe): Starter £3 = 250 calls https://buy.stripe.com/14AfZj2Scb1z5BKfrmgMw00 · Builder £10 = 1,000 calls https://buy.stripe.com/00w14pcsMfhP7JScfagMw01 · Pro £25 = 3,000 calls https://buy.stripe.com/00w00lakEglT0hq5QMgMw02. Your credit key is shown on screen right after payment; credits do not expire. Pack list: GET https://uk-drops-feed.8bitbudgets.workers.dev/v1/credits/packs. Default region is UK; pass region=US, CA, AU, EU, JP or all."
   },
   "servers": [
     {
@@ -1434,6 +1434,59 @@
           },
           "402": {
             "description": "Payment required (x402). Get 25 free calls: POST /v1/trial-key. Pay and retry with PAYMENT-SIGNATURE header."
+          }
+        }
+      }
+    },
+    "/v1/credits/packs": {
+      "get": {
+        "operationId": "listCardPacks",
+        "tags": [
+          "Credits"
+        ],
+        "security": [],
+        "summary": "Card credit packs (free): Starter £3 = 250 calls, Builder £10 = 1,000, Pro £25 = 3,000. buy_url is a Stripe Payment Link (present once card payments are live). After payment the buyer is redirected to /v1/stripe/success, which shows the credit key.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "card_payments": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "packs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": "string"
+                          },
+                          "calls": {
+                            "type": "integer"
+                          },
+                          "buy_url": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

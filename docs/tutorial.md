@@ -4,7 +4,7 @@ If you run a Discord server for collectors—or you're building an AI shopping/a
 
 In this tutorial, you'll build a working **Pokémon TCG restock and release-date Discord bot** in about 10 minutes using **UK Drops Feed**—a pay-per-call API and MCP server covering official TCG pre-orders, restocks, and street dates across the **UK, US, Canada, Australia, EU, and Japan** from official announcements and permitted retailers.
 
-Best part: you **don't need a crypto wallet to start**. You can mint a **25-call free trial key** with one `POST` request (no signup, no email), then optionally graduate to **$0.01 USDC per call on Base via x402** or a **$0.20 prepaid 25-call pack**.
+Best part: you **don't need a crypto wallet to start**. You can mint a **25-call free trial key** with one `POST` request (no signup, no email), then optionally graduate to **card credit packs** (Starter £3 = 250 calls, Builder £10 = 1,000, Pro £25 = 3,000), **$0.01 USDC per call on Base via x402**, or a **$0.20 prepaid 25-call USDC pack**.
 
 > Live API & docs: [`llms.txt`](https://uk-drops-feed.8bitbudgets.workers.dev/llms.txt) · [`openapi.json`](https://uk-drops-feed.8bitbudgets.workers.dev/openapi.json) · [GitHub repo](https://github.com/Thundercats23/uk-drops-feed) · [Launch thread on X](https://x.com/i/status/2125504264197796091)
 
@@ -16,7 +16,7 @@ A small Node.js bot that:
 1. Polls `/v1/drops/upcoming` and `/v1/drops/restocks` for Pokémon TCG drops.
 2. Deduplicates drops in a local `seen.json` file so your channel only gets notified when a date, status, or price changes.
 3. Posts clean Discord embeds with the product name, release date/window, price, stock status, and cited source link.
-4. Starts on a free 25-call trial key (`POST /v1/trial-key`), with a one-line upgrade path to x402 micropayments on Base.
+4. Starts on a free 25-call trial key (`POST /v1/trial-key`), with a one-line upgrade path to card credit packs or x402 micropayments on Base.
 
 ---
 
@@ -222,11 +222,21 @@ Want **US** or **global** alerts instead? Pass `UKDF_REGION=US` or `UKDF_REGION=
 
 ---
 
-## Step 5: Going past 25 free calls (Prepaid or x402 on Base)
+## Step 5: Going past 25 free calls (card, prepaid USDC or x402 on Base)
 
 Once your 25 free trial calls are used, paid routes return **HTTP 402 Payment Required** with standard x402 terms (`10000` atomic units = **$0.01 USDC** on Base mainnet `eip155:8453`).
 
-**No crypto wallet? Card payments are coming soon.** If you want to pay today with USDC on Base via Coinbase:
+**Pay by card (GBP, via Stripe), no wallet needed:**
+
+| Pack | Price | Calls | Buy |
+| --- | --- | --- | --- |
+| Starter | £3 | 250 | https://buy.stripe.com/14AfZj2Scb1z5BKfrmgMw00 |
+| Builder | £10 | 1,000 | https://buy.stripe.com/00w14pcsMfhP7JScfagMw01 |
+| Pro | £25 | 3,000 | https://buy.stripe.com/00w00lakEglT0hq5QMgMw02 |
+
+After payment you land on a page showing your `cr_...` credit key. Send it as `Authorization: Bearer <key>` (or `X-Credit-Token`) on `/v1/drops/*` and `/v1/briefs/weekly`; one credit per successful call, and credits do not expire. Check your balance free with `GET /v1/credits/balance`. The pack list is also at `GET /v1/credits/packs`.
+
+If you would rather pay with USDC on Base via Coinbase:
 
 1. In **Coinbase** or the **Base App**, buy or hold a small amount of **USDC on Base** (no ETH gas needed for x402 signatures).
 2. Connect a Base key (`EVM_PRIVATE_KEY`) to the SDK or buy a prepaid pack once.
